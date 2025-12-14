@@ -1,0 +1,31 @@
+---
+- name: pull the files from github
+  hosts: node01-rocky-linux
+  become: true
+  gather_facts: false
+  tasks:
+    - name: install git 
+      ansible.builtin.yum:
+        name: git
+        state: latest
+    - name: create directory
+      ansible.builtin.file:  
+        path: /ansible_files
+        state: directory
+    - name: pull the files
+      ansible.builtin.git:
+        repo: https://github.com/djs4451/ansible.git
+        dest: /ansible_files      
+    - name: find what files and dirs have been pulled
+      ansible.builtin.find:
+        paths: /ansible_files
+        excludes: ".git"
+        file_type: any
+        recurse: yes
+      register: pulled_files_list
+    - name: list the files
+      ansible.builtin.debug:
+        msg: "following files and dirs are pulled {{ item.path }}"
+      loop: "{{ pulled_files_list.files }}"
+          
+        

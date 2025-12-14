@@ -1,0 +1,26 @@
+- name: Search for a specific file and display all paths
+  hosts: your_target_hosts
+  become: false
+  gather_facts: false
+
+  vars:
+    search_path: "/etc"
+    file_name: "fstab" 
+
+  tasks:
+    - name: Find the specified file
+      ansible.builtin.find:
+        paths: "{{ search_path }}"
+        patterns: "{{ file_name }}"
+        recurse: yes
+      register: file_search_result
+
+    - name: Display the full path for EACH file found
+      ansible.builtin.debug:
+        # 'item' takes the place of 'file_search_result.files[0]'
+        msg: "Found file: {{ item.path }}"
+      # Loop over the list of file dictionaries
+      ansible.builtin.loop: "{{ file_search_result.files }}"
+      
+      # Optional: Add the conditional check here too for safety
+      when: file_search_result.files | length > 0

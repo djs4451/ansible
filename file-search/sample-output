@@ -1,0 +1,26 @@
+{
+  "changed": false,
+  "examined": 110,
+  "files": [
+    {
+      "path": "/etc/fstab",
+      "mode": "0644",
+      "owner": "root",
+      "group": "root",
+      "size": 528,
+      "mtime": 1678886400.0,
+      "atime": 1678886400.0,
+      "ctime": 1678886400.0,
+      "uid": 0,
+      "gid": 0,
+      "isreg": true,
+      "isdir": false,
+      "islnk": false,
+      // ... other file stats ...
+    }
+  ],
+  "matched": 1,
+  "invocation": {
+    // ... task parameters ...
+  }
+}

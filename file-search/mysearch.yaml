@@ -1,0 +1,20 @@
+---
+- name: search for file and display the path
+  hosts: allservers
+  become: true
+  gather_facts: true
+  vars:
+    loc: "/etc"
+    filename: "test.txt" 
+  tasks:
+    - name: search for the file
+      ansible.builtin.find:
+        path: "{{ loc}}"
+        patterns: "{{ filename }}"
+        recurse: true
+      register: file_find_result
+   
+    - name: print the full path if the file is present
+      ansible.builtin.debug:
+        msg: " file found at path {{ file_find_result.files[0].path }} " 
+      when: file_find_result.files|length > 0      

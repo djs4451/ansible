@@ -1,0 +1,34 @@
+---
+- name: Search for file and display the path
+  hosts: allservers
+  become: true
+  gather_facts: true
+  vars:
+    # loc: "/" # Not needed, removed
+    filename: "test.txt"
+    search_paths:
+      - "/"
+      - "/home"
+      - "/var"
+      - "/tmp"
+      - "/etc"
+
+  tasks:
+    - name: Search for the file across multiple paths
+      ansible.builtin.find:
+        paths: "{{ item }}"
+        patterns: "{{ filename }}"
+        recurse: true
+      # NOTE: The loop is defined by the 'loop' keyword
+      loop: "{{ search_paths }}"
+      register: file_find_result
+      # Now, file_find_result is a dictionary containing a 'results' list.
+
+    # --- NEW TASK: Loop through the results to find a match ---
+    - name: Print the full path for found files
+      ansible.builtin.debug:
+        msg: "✅ File found in {{ item.item }}: Full path: {{ item.files[0].path }}"
+      # Loop over the list of results created by the first task
+      loop: "{{ file_find_result.results }}"
+      # Only run this debug task if the current result item found files
+      when: item.files | length > 0
