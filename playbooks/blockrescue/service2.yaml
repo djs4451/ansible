@@ -1,0 +1,50 @@
+---
+- name: Check for and restart specified web services
+  hosts: webserver
+  gather_facts: true
+  become: true # Use 'become: true' (sudo) for service management
+
+  # Define the list of services to check and restart
+  vars:
+    web_services:
+      - nginx
+      - httpd
+      - mariadb # Example: Add another service if needed
+
+  tasks:
+    - name: Process each service in the list
+      # The block and all its tasks will execute once for each item in the loop.
+      block:
+        - name: Check existence and attempt to restart service
+          ansible.builtin.service:
+            name: "{{ item }}"
+            state: restarted
+          register: restart_result
+          # 'ignore_errors: true' is CRITICAL here. 
+          # It forces Ansible to proceed to the 'rescue' block on failure, 
+          # instead of failing the entire play and stopping.
+          ignore_errors: true 
+          
+        - name: Verification status message (Success)
+          ansible.builtin.debug:
+            msg: "✅ Service '{{ item }}' successfully restarted or was already running."
+          # Only display this success message if the restart was successful (i.e., not failed)
+          when: not restart_result.failed and restart_result.changed
+          
+        - name: Verification status message (No Change)
+          ansible.builtin.debug:
+            msg: "ℹ️ Service '{{ item }}' was checked but no change/restart was needed."
+          # Only display this message if the service task ran but reported no change (i.e., was already running)
+          when: not restart_result.failed and not restart_result.changed
+
+      # The rescue block runs IF the task inside the block fails (e.g., service is not installed)
+      rescue:
+        - name: Error message (Failure/Not Found)
+          ansible.builtin.debug:
+            msg: "🛑 FAILED for service '{{ item }}'. It likely does not exist on the target host or failed to start. Error details: {{ restart_result.msg | default('N/A') }}"
+          # The rescue block runs automatically upon failure, so no 'when' is needed.
+      
+      # The loop iterates the entire block/rescue structure for each item.
+      loop: "{{ web_services }}"
+      loop_control:
+        label: "{{ item }}" # This makes the output much cleaner by labeling the task with the service name

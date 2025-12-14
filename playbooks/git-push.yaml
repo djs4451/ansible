@@ -1,0 +1,12 @@
+---
+- name: copy the fils and dir from github
+  become: true
+  hosts: localhost
+  remote_user: root
+  tasks:
+    - name: push to github
+      ansible.builtin.git:
+        repo: https://github.com/djs4451/ansible.git
+        src: /etc/ansible/playbook
+    
+    

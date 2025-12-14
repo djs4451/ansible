@@ -1,0 +1,4 @@
+pkgs:
+  - tree
+  - telnet
+  - net-tools

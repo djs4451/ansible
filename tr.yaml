@@ -1,0 +1,16 @@
+---
+- name: traceroute
+  hosts: webserver
+  become: true
+  tasks:
+    - name: traceroute to 8.8.8.8
+      command: traceroute 8.8.8.8
+      register: result
+      ignore_errors: true  
+    - name: print result
+      debug:
+        msg: "the result"
+    - name: result
+      debug:      
+        var: result.stdout_lines
+           

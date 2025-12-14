@@ -1,0 +1,25 @@
+---
+- name: install packages using loop
+  hosts: webserver
+  become: true
+  gather_facts: true
+  tasks:
+    - name: uninstall the packages
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - tree
+        - telnet
+        - net-tools    
+      when: ansible_distribution=="Rocky"  
+      
+    - name: install the packages on kali
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - tree
+        - telnet
+        - net-tools    
+      when: ansible_distribution=="Kali"  

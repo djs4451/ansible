@@ -1,0 +1,33 @@
+---
+- name: copy the fils and dir from github
+  become: true
+  hosts: all
+  remote_user: root
+  tasks:
+    - name: create a directory
+      file: 
+        path: /github-ubuntu
+        state: directory
+        owner: root
+        mode: 644
+      when: ansible_distribution == "Ubuntu"  
+    - name: create directory
+      file: 
+        path: /github-rocky 
+        state: directory
+        owner: root
+        mode: 644
+      when: ansible_distribution == "Rocky"  
+     
+    - name: copy from github
+      ansible.builtin.git:
+        repo: https://github.com/djs4451/ansible.git
+        dest: /github-ubuntu
+      when: ansible_distribution == "Ubuntu"
+    
+    - name: copy from github
+      ansible.builtin.git:
+        repo: https://github.com/djs4451/ansible.git
+        dest: /github-rocky
+      when: ansible_distribution == "Rocky"
+    

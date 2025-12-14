@@ -1,0 +1,16 @@
+---
+- name: var-prompt for package
+  hosts: webserver
+  become: true
+  gather_facts: true
+  remote_user: root
+  vars_prompt:
+    - name: package
+      prompt: " enter the package name"
+      private: no
+  tasks:
+    - name: install
+      yum:
+        name: "{{ package }}"
+        state: latest
+

@@ -1,0 +1,6 @@
+---
+- name: install http
+  hosts: webserver
+  gather_facts: true
+  roles:
+    - http

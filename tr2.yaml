@@ -1,0 +1,27 @@
+---
+- name: misc
+  hosts: webserver
+  become: true
+  gather_facts: true
+  tasks:
+    - name: install packages 
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - traceroute
+        - net-tools
+        - tree
+      when: ansible_distribution=="Rocky"
+      ignore_errors: true
+   
+    - name: display traceroute to 192.168.1.38
+      ansible.builtin.command: traceroute 192.168.1.38
+      register: command_output
+
+    - name: display the output
+      debug:
+        msg: "OUTPUT"
+    - debug:      
+        var: command_output.stdout_lines     
+

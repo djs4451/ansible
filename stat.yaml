@@ -1,0 +1,19 @@
+---
+- name: check if file is present
+  hosts: all
+  gather_facts: true
+  become: true
+  tasks:
+    - name: check if index.html file is present
+      stat:
+        path: /var/www/html/index.html
+      register: info
+    - name: display result
+      debug:
+        msg: file is present
+      when: info.stat.exists
+
+    - name: display result
+      debug:
+        msg: file is absent
+      when: not info.stat.exists

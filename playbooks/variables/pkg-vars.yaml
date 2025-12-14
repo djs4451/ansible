@@ -1,0 +1,24 @@
+---
+- name: install packages
+  remote_user: root
+  become: true
+  gather_facts: true
+  hosts: webserver
+  vars:
+    pkgs:
+      - httpd
+      - tree
+      - telnet
+      - net-tools
+    svc:
+      - httpd    
+  tasks:
+    - name: install packages
+      yum:
+        name: "{{ pkgs }}"
+        state: latest
+    - name: restart services
+      service:
+        name: "{{ svc|first }}"
+        state: started
+        enabled: yes      

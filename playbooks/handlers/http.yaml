@@ -1,0 +1,36 @@
+---
+- name: install httpd
+  hosts: webserver
+  become: true
+  gather_facts: true
+  vars:
+    - hostname: "{{hostname_output.stdout}}"
+    - ip: "{{ ip_output.stdout}}"
+  tasks:
+    - name: install httpd
+      yum:
+        name: httpd
+        state: latest
+
+    - name: get the ip 
+      command: hostname -I 
+      register: ip_output
+
+    - name: get the hostname
+      command: hostname
+      register: hostname_output
+
+    - name: edit the  index page
+      lineinfile:
+        path: /var/www/html/index.html
+        line: 'Welcome to "{{hostname}}" at "{{ip}}"'
+      notify: restart httpd
+ 
+  handlers:
+    - name: restart httpd
+      command: systemctl restart httpd
+
+
+ 
+        
+      

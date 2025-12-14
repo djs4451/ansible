@@ -1,0 +1,26 @@
+---
+- name: install packages and manage services
+  remote_user: root
+  become: true
+  gather_facts: true
+  hosts: webserver
+  vars:
+    pkgs:
+      - httpd
+      - tree
+      - telnet
+      - net-tools
+    svc:
+      - httpd
+  tasks:
+    - name: install packages
+      ansible.builtin.yum:
+        name: "{{ pkgs }}" # 'yum' and 'package' modules accept a list of names
+        state: latest
+      
+    - name: start services
+      ansible.builtin.service:
+        # FIX: Use the 'first' filter to pass only the string 'httpd'
+        name: "{{ svc | first }}" 
+        state: started
+        enabled: yes

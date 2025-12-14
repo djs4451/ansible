@@ -1,0 +1,46 @@
+#check if service is running, if yes restart it. if not running start it
+---
+- name: start-stop service
+  hosts: webserver
+  become: true
+  gather_facts: yes
+  tasks:
+    - name: check service status
+      shell: if ps -ef|grep httpd|grep -v grep>/dev/null;then echo "httpd is running";else echo "httpd is not running";fi
+      register: service_status
+      changed_when: false
+
+    - name: print service status
+      debug:
+        msg: 'httpd service is running on "{{inventory_hostname}}"'      
+      when: service_status.stdout=="httpd is running"
+
+    - name: print service status
+      debug:
+        msg: 'httpd service is not running on "{{inventory_hostname}}"'      
+      when: service_status.stdout=="httpd is not running"
+   
+    - name: start the service if it is not running
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: true
+      when: service_status.stdout=="httpd is not running"
+    - name:  service check  
+      debug: 
+        msg: 'httpd started on "{{inventory_hostname}}"' 
+    - name: capture the uptime
+      ansible.builtin.shell: journalctl --unit=httpd|grep "Started" | awk -F " " '{print $3}'      
+      register: command_output
+    - name: print output     
+      debug:
+        msg: 'started at "{{ command_output.stdout}}"'    
+        
+    - name: restart the service if it is not running
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: true
+      when: service_status.stdout=="httpd is not running"
+    - debug: 
+        msg: 'httpd restarted on "{{inventory_hostname}}"'    

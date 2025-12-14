@@ -1,0 +1,12 @@
+---
+- name: var-prompt for package
+  hosts: webserver
+  become: true
+  gather_facts: true
+  remote_user: root
+  tasks:
+    - name: install
+      yum:
+        name: "{{pkg }}"
+        state: latest
+          # run it as ansible-playbook extra-vars.yaml -e pkg=http

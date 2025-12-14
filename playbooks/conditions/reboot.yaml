@@ -1,0 +1,10 @@
+---
+- name: reboot rocky linux systems
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: reboot the rocky linux systems
+      command: systemctl reboot
+      when: ansible_distribution=="Rocky"
+      ignore_errors: true

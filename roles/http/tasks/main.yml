@@ -1,0 +1,19 @@
+---
+# tasks file for http
+- name: get ip
+  shell: hostname -I
+  register: ip
+- name: collect the command output
+  debug:
+    var: ip.stdout_lines  
+  
+- name: install packages
+  yum:
+    name: "{{ pkgs }}"
+    state: latest
+
+- name: add customized template
+  template:
+    src: index.j2
+    dest: /var/www/html/index.html
+  notify: restart httpd  

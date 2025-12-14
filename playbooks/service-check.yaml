@@ -1,0 +1,16 @@
+---
+- name: test service is up or down
+  hosts: webserver
+  become: true
+  tasks:
+    - name: test httpd process
+      shell: if ps -ef| grep httpd|grep -v grep >/dev/null; then echo "httpd running"; else echo "httpd not running";fi
+      ignore_errors: true
+      register: process_check
+    - name: message
+      debug: 
+        msg: "{{ process_check.stdout }}"    
+    - name: prompt
+      fail:
+        msg: 'httpd process is running on "{{ inventory_hostname }}" . please stop to proceed further.'
+      when: process_check.stdout=="httpd running"      

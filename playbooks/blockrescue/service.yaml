@@ -1,0 +1,33 @@
+---
+- name: restart the service
+  hosts: webserver
+  gather_facts: true
+  become: true
+  tasks:
+    - name: start web services
+      block:
+        - name: restart message
+          ansible.builtin.debug:
+            msg: "Attempting to restart nginx"
+            
+        - name: restart nginx
+          ansible.builtin.service:
+            name: nginx
+            state: restarted
+     
+      rescue:         
+        - name: error message
+          ansible.builtin.debug:
+            msg: 'failed to restart nginx'
+         
+        - name: restart httpd
+          ansible.builtin.service:
+            name: httpd
+            state: restarted
+          register: command_result
+
+      always: 
+        - name: status
+          ansible.builtin.debug:
+            msg: ' service started successfully'
+        

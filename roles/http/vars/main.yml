@@ -1,0 +1,6 @@
+---
+# vars file for http
+pkgs:
+  - httpd
+  - tree 
+ip: "{{ ip.stdout }}"    

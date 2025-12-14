@@ -1,0 +1,23 @@
+---
+- name: remove index.html file 
+  hosts: webserver
+  gather_facts: true
+  become: yes
+  tasks:
+    - name: locate the file and display its contents
+      stat:
+        path: /var/www/html/index.html
+      register: info
+
+    - name: display contents
+      ansible.builtin.command: cat  /var/www/html/index.html   
+      when: info.stat.exists
+
+    - name: delete the file
+      file:
+        path: /var/www/html/index.html
+        state: absent
+      register: delete_result
+
+    - debug:
+        var: delete_result.stdout_lines    

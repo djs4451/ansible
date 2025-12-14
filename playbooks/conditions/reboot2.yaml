@@ -1,0 +1,12 @@
+
+---
+- name: reboot rocky linux systems
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    -  name: Reboot Rocky Linux systems and wait for them to return
+       ansible.builtin.reboot:
+       # Optional: Add a short pause if needed, though usually not required
+       # post_reboot_delay: 30 
+       when: ansible_distribution=="Rocky"

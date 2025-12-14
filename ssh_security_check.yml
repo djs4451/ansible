@@ -1,0 +1,30 @@
+---
+- name: check if file is present
+  hosts: webserver
+  gather_facts: true
+  become: true
+  tasks:
+    - name: print the current file permissions
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config
+      register: perms
+    - name: permissions on file
+      ansible.builtin.debug:
+        msg: "Permissions are {{perms.stat.mode}}"
+    - name: change the permissions"
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config
+        mode: 0600
+      register: perm_change    
+    - name: display status
+      ansible.builtin.debug:
+        msg: "permissions modified"
+      when: perm_change.changed  
+    - name: display new permissions
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config
+      register: new_perms
+
+    - ansible.builtin.debug:
+        msg: " new permission {{new_perms.stat.mode}}"    
+

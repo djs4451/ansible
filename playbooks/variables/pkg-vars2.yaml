@@ -1,0 +1,34 @@
+---
+- name: install packages and manage services
+  hosts: webserver
+  become: true
+  gather_facts: true
+  
+  vars:
+    # Package installation can use a list directly
+    pkgs:
+      - httpd
+      - tree
+      - telnet
+      - net-tools
+      
+    # Service management works best with a loop
+    svc:
+      - httpd
+      # You could add more services here, and the loop would manage them:
+      # - mariadb
+      # - firewalld 
+
+  tasks:
+    - name: Install packages (using the list directly)
+      ansible.builtin.yum:
+        name: "{{ pkgs }}" # This works fine without a loop
+        state: latest
+        
+    - name: Start services (using a loop)
+      # This task will run once for each item in the 'svc' list
+      ansible.builtin.service:
+        name: "{{ item }}" 
+        state: started
+        enabled: yes
+      loop: "{{ svc }}" # Tells Ansible to iterate over the 'svc' list

@@ -1,0 +1,12 @@
+---
+- name: print messages
+  hosts: all
+  gather_facts: yes
+  become: true
+  tasks: 
+    - name: print msg
+      debug:
+        msg: "{{ item }}"
+      with_items:
+        - hello1
+        - hello2 
