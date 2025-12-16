@@ -1,0 +1,23 @@
+---
+- name: git
+  hosts: node02-rocky-linux
+  become: yes
+  gather_facts: yes
+  vars:
+    git_repo: "git@github.com:djs4451/ansible.git"
+    download_location: "/ansible-github"
+    sshkey:  "/root/.ssh/id_ed25519"  
+  tasks:
+    - name: install git
+      ansible.builtin.yum:
+        name: git
+        state: latest
+        update_cache: true
+        
+    - name: checkout git repo     
+      ansible.builtin.git:  
+        repo: "{{ git_repo }}"
+        dest: "{{ download_location }}"
+        key_file: "{{ sshkey }}" 
+        accept_hostkey: yes  
+          

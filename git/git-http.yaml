@@ -1,6 +1,6 @@
 ---
 - name: pull the files from github
-  hosts: node01-rocky-linux
+  hosts: node02-rocky-linux
   become: true
   gather_facts: false
   tasks:
