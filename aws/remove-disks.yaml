@@ -1,0 +1,39 @@
+---
+- name: Detach and delete additional 20GB disks
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    region: eu-north-1
+    instance_name: ansible-ec2-demo
+    device_name: /dev/sdb
+
+  tasks:
+    - name: Gather info about instances
+      amazon.aws.ec2_instance_info:
+        region: "{{ region }}"
+        filters:
+          "tag:Name": "{{ instance_name }}"
+          instance-state-name: [running, stopped]
+      register: ec2_info
+
+    - name: Detach and delete volumes
+      amazon.aws.ec2_vol:
+        region: "{{ region }}"
+        # Fixed path: added .ebs.
+        id: "{{ item.1.ebs.volume_id }}"
+        instance: null
+        state: absent
+      # Only run if the device name matches AND the ebs dictionary exists
+      when: 
+        - item.1.device_name == device_name
+        - item.1.ebs is defined
+      loop: "{{ ec2_info.instances | subelements('block_device_mappings', skip_missing=True) }}"
+      register: vol_removal
+
+    - name: Summary of removal
+      debug:
+        msg: "Volume removed successfully"
+      when: item.changed
+      loop: "{{ vol_removal.results | default([]) }}"

@@ -1,0 +1,23 @@
+---
+- name: Check nginx installation and version
+  hosts: all
+  become: yes
+  gather_facts: no
+
+  tasks:
+    - name: Gather installed package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: nginx is installed – show version
+      ansible.builtin.debug:
+        msg: >
+          nginx is installed on {{ inventory_hostname }}
+          (version: {{ ansible_facts.packages['nginx'][0].version }})
+      when: "'nginx' in ansible_facts.packages"
+
+    - name: nginx is NOT installed
+      ansible.builtin.debug:
+        msg: "nginx is NOT installed on {{ inventory_hostname }}"
+      when: "'nginx' not in ansible_facts.packages"
+

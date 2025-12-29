@@ -1,0 +1,39 @@
+---
+- name: Attach additional 20GB disks to existing instances
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    region: eu-north-1
+    instance_name: ansible-ec2-demo
+    volume_size: 20
+    device_name: /dev/sdb  # The device mapping for the secondary disk
+
+  tasks:
+    - name: Gather information about existing instances
+      amazon.aws.ec2_instance_info:
+        region: "{{ region }}"
+        filters:
+          "tag:Name": "{{ instance_name }}"
+          instance-state-name: [running]
+      register: ec2_info
+
+    - name: Create and attach volume to each instance
+      amazon.aws.ec2_vol:
+        region: "{{ region }}"
+        instance: "{{ item.instance_id }}"
+        volume_size: "{{ volume_size }}"
+        volume_type: gp3
+        device_name: "{{ device_name }}"
+        delete_on_termination: true
+        tags:
+          Name: "extra-disk-{{ item.instance_id }}"
+          Environment: Dev
+      loop: "{{ ec2_info.instances }}"
+      register: vol_output
+
+    - name: Summary of attached volumes
+      debug:
+        msg: "Attached a {{ volume_size }}GB volume to instance {{ item.item.instance_id }} at {{ device_name }}"
+      loop: "{{ vol_output.results }}"

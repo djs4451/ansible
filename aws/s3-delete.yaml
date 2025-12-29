@@ -1,0 +1,21 @@
+- name: Delete S3 bucket created by Ansible
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    region: eu-north-1
+    bucket_name: ansible-demo-s3
+
+  tasks:
+
+    - name: Delete bucket including all objects and versions
+      amazon.aws.s3_bucket:
+        name: "{{ bucket_name }}"
+        region: "{{ region }}"
+        state: absent
+        force: true
+
+    - debug:
+        msg: "S3 bucket {{ bucket_name }} has been fully deleted"
+

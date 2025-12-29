@@ -1,0 +1,8 @@
+| Variable                   | Meaning                           |
+| -------------------------- | --------------------------------- |
+| `inventory_hostname`       | Name used in inventory (`web01`)  |
+| `inventory_hostname_short` | Short name without domain         |
+| `ansible_host`             | Actual IP/DNS Ansible connects to |
+| `ansible_fqdn`             | FQDN discovered from the host     |
+| `ansible_hostname`         | Hostname from the OS              |
+

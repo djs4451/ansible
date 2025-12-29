@@ -1,6 +1,6 @@
 ---
 - name: print messages
-  hosts: all
+  hosts: localhost
   gather_facts: yes
   become: true
   tasks: 

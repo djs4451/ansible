@@ -1,0 +1,36 @@
+---
+- name: Terminate EC2 instances and cleanup
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    region: eu-north-1
+    instance_name: ansible-ec2-demo
+    sg_name: ansible-ssh-sg
+
+  tasks:
+    - name: Terminate instances by name tag
+      amazon.aws.ec2_instance:
+        region: "{{ region }}"
+        filters:
+          "tag:Name": "{{ instance_name }}"
+          instance-state-name: [running, stopped, pending]
+        state: absent
+        wait: true
+      register: terminate_output
+
+    - name: Remove the security group
+      amazon.aws.ec2_security_group:
+        region: "{{ region }}"
+        name: "{{ sg_name }}"
+        state: absent
+      # The security group cannot be deleted until instances are fully terminated
+      register: sg_deletion
+      until: sg_deletion is succeeded
+      retries: 10
+      delay: 10
+
+    - name: Summary of deletion
+      debug:
+        msg: "Terminated {{ terminate_output.instances | default([]) | length }} instances and removed security group {{ sg_name }}."

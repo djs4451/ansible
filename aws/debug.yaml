@@ -1,0 +1,11 @@
+- hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Print caller identity
+      amazon.aws.aws_caller_info:
+        profile: ansible
+      register: caller
+
+    - debug:
+        var: caller
+

@@ -1,0 +1,42 @@
+---
+- name: Delete EC2 instance and security group
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    region: eu-north-1
+    instance_name: ansible-ec2-demo
+    sg_name: ansible-ssh-sg
+
+  tasks:
+    - name: Find EC2 instances by Name tag
+      amazon.aws.ec2_instance_info:
+        region: "{{ region }}"
+        filters:
+          "tag:Name": "{{ instance_name }}"
+          instance-state-name:
+            - pending
+            - running
+            - stopping
+            - stopped
+      register: ec2_info
+
+    - name: Fail if no matching EC2 instances found
+      fail:
+        msg: "No EC2 instances found with Name tag {{ instance_name }}"
+      when: ec2_info.instances | length == 0
+
+    - name: Terminate EC2 instances
+      amazon.aws.ec2_instance:
+        region: "{{ region }}"
+        instance_ids: "{{ ec2_info.instances | map(attribute='instance_id') | list }}"
+        state: absent
+        wait: true
+
+    - name: Delete security group
+      amazon.aws.ec2_security_group:
+        region: "{{ region }}"
+        name: "{{ sg_name }}"
+        state: absent
+
