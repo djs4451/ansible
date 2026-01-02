@@ -1,0 +1,12 @@
+Reads vmware_inventory.yml
+        ↓
+Sees "plugin: vmware_vm_inventory"
+        ↓
+Loads that plugin
+        ↓
+Calls vCenter APIs
+        ↓
+Builds inventory in RAM
+        ↓
+Then runs your playbook on those hosts
+

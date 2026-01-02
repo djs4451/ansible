@@ -1,0 +1,52 @@
+---
+- name: establish connection to git hub repo and download the repo files
+  hosts: node03-kali-linux
+  become: yes
+  gather_facts: yes
+  vars:
+    github_url: "https://api.github.com/user/keys"
+    kali_pat: " {{ lookup('file','/etc/ansible/git/kali-pat-token') }}"
+    key_title: "ansible-{{ inventory_hostname }}" 
+    sshkey: "/home/digvijay/.ssh/id_ed25519" 
+  tasks:
+    - name: fetch the public key of digvijay@node03-kali-linux
+      ansible.builtin.slurp:
+        src: /home/digvijay/.ssh/id_ed25519.pub
+      register: ssh_key
+      
+    - name: upload the ssh key to the github
+      ansible.builtin.uri:
+        url: "{{ github_url }}"
+        method: POST
+        headers:
+          Authorization: "token {{ kali_pat }}"
+          Accept: "application/vnd.github+json"
+        body_format: json
+        body:
+          title: "{{ key_title }}"
+          key: "{{ ssh_key.content | b64decode }}"
+        status_code:
+          - 201    # Created
+          - 422    # Already exists
+    - name: install git
+      ansible.builtin.apt:
+        name: git
+        state: latest
+    - name: pull the files from the github
+      ansible.builtin.git:
+        repo: git@github.com:djs4451/ansible.git
+        dest: /home/digvijay/ansible_repo
+        key_file: "{{ sshkey }}"
+        accept_hostkey: yes
+    - name: find what files and dirs have been pulled
+      ansible.builtin.find:
+        paths: /home/digvijay/ansible_repo
+        excludes: ".git"
+        file_type: any
+        recurse: yes
+      register: pulled_files_list
+    - name: list the files
+      ansible.builtin.debug:
+        msg: "following files and dirs are pulled {{ item.path }}"
+      loop: "{{ pulled_files_list.files }}"   
+

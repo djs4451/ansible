@@ -1,0 +1,42 @@
+- name: Failback VM to Primary Site
+  hosts: localhost
+  gather_facts: no
+
+  collections:
+    - community.vmware
+
+  vars:
+    vcenter: vc.lab.local
+    user: administrator@vsphere.local
+    pass: VMware@123
+    dc: DC1
+    cluster: PROD
+    datastore: shared01
+    network: VM_Network
+    vm_name: app01
+    template: rocky-template
+    ip: 192.168.10.50
+
+  tasks:
+    - name: Restore primary VM
+      vmware_guest:
+        hostname: "{{ vcenter }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: no
+        datacenter: "{{ dc }}"
+        cluster: "{{ cluster }}"
+        name: "{{ vm_name }}"
+        template: "{{ template }}"
+        datastore: "{{ datastore }}"
+        state: poweredon
+
+        networks:
+          - name: "{{ network }}"
+            ip: "{{ ip }}"
+            netmask: 255.255.255.0
+            gateway: 192.168.10.1
+
+        customization:
+          hostname: "{{ vm_name }}"
+

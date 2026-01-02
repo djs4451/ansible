@@ -1,0 +1,90 @@
+---
+- name: Patch compliance audit & segregation
+  hosts: rhel_servers
+  become: yes
+  gather_facts: yes
+
+  tasks:
+
+    - name: Ensure dnf-plugins-core is installed
+      package:
+        name: dnf-plugins-core
+        state: present
+
+    - name: Get last patch time
+      shell: dnf history info | awk '/Begin time/{print $4,$5,$6,$7}' | head -1
+      register: last_patch
+      changed_when: false
+
+    - name: Get running kernel
+      command: uname -r
+      register: running_kernel
+      changed_when: false
+
+    - name: Get latest installed kernel
+      shell: rpm -q kernel --last | head -1 | awk '{print $1}'
+      register: latest_kernel
+      changed_when: false
+
+    - name: Get uptime
+      command: uptime -p
+      register: uptime
+      changed_when: false
+
+    - name: Check reboot pending
+      command: needs-restarting -r
+      register: restart_check
+      failed_when: false
+      changed_when: false
+
+    - set_fact:
+        reboot_pending: "{{ restart_check.rc != 0 }}"
+
+    - name: Check pending packages
+      command: dnf check-update
+      register: pending_updates
+      failed_when: false
+      changed_when: false
+
+    - set_fact:
+        non_compliant: "{{ reboot_pending or (pending_updates.rc == 100) }}"
+
+    - name: Add failed hosts to FAILED_PATCH
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: FAILED_PATCH
+      when: non_compliant
+
+    - name: Add compliant hosts to COMPLIANT_PATCH
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: COMPLIANT_PATCH
+      when: not non_compliant
+
+# =================== REPORTING ===================
+
+- name: Export compliance to CSV
+  hosts: localhost
+  gather_facts: false
+  vars:
+    csv_file: /tmp/patch_compliance_report.csv
+
+  tasks:
+
+    - copy:
+        dest: "{{ csv_file }}"
+        content: "Host,Compliance_Status\n"
+
+    - lineinfile:
+        path: "{{ csv_file }}"
+        line: "{{ item }},COMPLIANT"
+      loop: "{{ groups['COMPLIANT_PATCH'] | default([]) }}"
+
+    - lineinfile:
+        path: "{{ csv_file }}"
+        line: "{{ item }},FAILED"
+      loop: "{{ groups['FAILED_PATCH'] | default([]) }}"
+
+    - debug:
+        msg: "CSV compliance report created at {{ csv_file }}"
+

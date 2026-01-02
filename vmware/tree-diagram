@@ -1,0 +1,35 @@
+Datacenter 2 (main container)
+├── BLR (site1)
+│   ├── Datastores
+│   │   ├── BLR_DS1
+│   │   └── BLR_DS2
+│   ├── Networks
+│   │   ├── BLR_Net1
+│   │   └── BLR_Net2
+│   ├── Clusters
+│   │   ├── PROD
+│   │   │   └── Folder: PROD_VMs
+│   │   └── NON-PROD
+│   │       └── Folder: NONPROD_VMs
+├── HYD(site2)
+│   ├── Datastores
+│   │   ├── HYD_DS1
+│   │   └── HYD_DS2
+│   ├── Networks
+│   │   ├── HYD_Net1
+│   │   └── HYD_Net2
+│   ├── Clusters
+│   │   ├── PROD
+│   │   │   └── Folder: PROD_VMs
+│   │   └── NON-PROD
+│   │       └── Folder: NONPROD_VMs
+
+
+networks and datastores lie at the datacenter level. clusters is a group of esxi hosts.folders are used to organize vms within each cluster.  
+
+packages needed for ansible to function
+
+1> dnf install open-vm-tools; systemctl start vmtoolsd;systemctl enable vmtoolsd
+2> dnf install python3,python3-pip
+3> pip3 install pyVmomi
+4> ansible-galaxy collection install community.vmware

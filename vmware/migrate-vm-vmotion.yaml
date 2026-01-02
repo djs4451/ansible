@@ -1,0 +1,28 @@
+- name: Live migrate VM to another ESXi host (vMotion)
+  hosts: localhost
+  gather_facts: no
+
+  collections:
+    - community.vmware
+
+  vars:
+    vcenter: vc.lab.local
+    user: administrator@vsphere.local
+    pass: VMware@123
+    dc: DC1
+    vm_name: app01
+
+    target_host: esxi02.lab.local
+
+  tasks:
+    - name: vMotion running VM to target ESXi host
+      vmware_guest:
+        hostname: "{{ vcenter }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: no
+        datacenter: "{{ dc }}"
+        name: "{{ vm_name }}"
+        esxi_hostname: "{{ target_host }}"
+        state: poweredon
+

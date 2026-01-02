@@ -1,0 +1,151 @@
+---
+- name: Patch RHEL 8/9 servers registered to Red Hat Satellite
+  hosts: rhel_servers
+  become: yes
+  gather_facts: yes
+
+  vars:
+    apply_security_only: false
+    reboot_if_required: true
+
+  tasks:
+
+    # ---------------------------------------------------------
+    # 1. Verify Satellite Registration
+    # ---------------------------------------------------------
+    - name: Check subscription status
+      command: subscription-manager status
+      register: sub_status
+      changed_when: false
+
+    - name: Fail if server is not properly registered to Satellite
+      fail:
+        msg: "ERROR: System is NOT properly registered to Red Hat Satellite!"
+      when: "'Overall Status: Current' not in sub_status.stdout"
+
+
+    # ---------------------------------------------------------
+    # 2. Refresh entitlements and repo definitions
+    # ---------------------------------------------------------
+    - name: Refresh subscription data from Satellite
+      command: subscription-manager refresh
+      changed_when: false
+
+    - name: List repos (diagnostic)
+      command: subscription-manager repos --list
+      changed_when: false
+
+
+    # ---------------------------------------------------------
+    # 3. Disable all NON-Satellite repos (safe mode)
+    # ---------------------------------------------------------
+    - name: Find all repo files
+      find:
+        paths: /etc/yum.repos.d
+        patterns: "*.repo"
+      register: repo_files
+
+    - name: Disable all non-Satellite repos
+      ini_file:
+        path: "{{ item.path }}"
+        section: "{{ item.section }}"
+        option: enabled
+        value: "0"
+      loop: "{{ repo_files.files }}"
+      when: item.path != "/etc/yum.repos.d/redhat.repo"
+      ignore_errors: yes
+
+
+    # ---------------------------------------------------------
+    # 4. Clean metadata caches and rebuild from Satellite
+    # ---------------------------------------------------------
+    - name: Clean DNF metadata cache
+      command: dnf clean all
+      changed_when: false
+
+    - name: Download fresh repo metadata from Satellite
+      command: dnf makecache --refresh
+      changed_when: false
+
+
+    # ---------------------------------------------------------
+    # 5. Ensure needs-restarting is available
+    # ---------------------------------------------------------
+    - name: Install dnf-plugins-core (provides needs-restarting)
+      package:
+        name: dnf-plugins-core
+        state: present
+
+
+    # ---------------------------------------------------------
+    # 6. Check and Apply Updates
+    # ---------------------------------------------------------
+    - name: Check for available updates
+      command: dnf check-update --refresh
+      register: check_updates
+      failed_when: false
+      changed_when: false
+
+    - name: Display available updates
+      debug:
+        msg: "{{ check_updates.stdout_lines }}"
+      when: check_updates.stdout != ""
+
+    - name: Apply ALL updates
+      dnf:
+        name: "*"
+        state: latest
+      when: not apply_security_only
+
+    - name: Apply ONLY security updates
+      dnf:
+        security: true
+        state: latest
+      when: apply_security_only
+
+
+    # ---------------------------------------------------------
+    # 7. Determine restart requirement
+    # ---------------------------------------------------------
+    - name: Check if system restart is required
+      command: needs-restarting -r
+      register: restart_check
+      failed_when: false
+      changed_when: false
+
+    - name: Set restart_needed flag
+      set_fact:
+        restart_needed: "{{ restart_check.rc !=0 }}"
+
+
+    # ---------------------------------------------------------
+    # 8. Reboot if required
+    # ---------------------------------------------------------
+    - name: Reboot if restart is required
+      reboot:
+        msg: "Reboot after patching"
+        pre_reboot_delay: 10
+        post_reboot_delay: 20
+        reboot_timeout: 600
+      when:
+        - reboot_if_required
+        - restart_needed
+
+
+    # ---------------------------------------------------------
+    # 9. Post-patching verification
+    # ---------------------------------------------------------
+    - name: Wait for host to come online
+      wait_for_connection:
+        timeout: 300
+      when: restart_needed
+
+    - name: Check running kernel
+      command: uname -r
+      register: new_kernel
+      changed_when: false
+
+    - name: Patching completed successfully
+      debug:
+        msg: "Patching completed. Running kernel: {{ new_kernel.stdout }}"
+

@@ -1,0 +1,128 @@
+- name: Provision VM in vSphere
+  hosts: localhost
+  gather_facts: no
+
+  collections:
+    - community.vmware
+
+  vars:
+    vcenter: vc.lab.local
+    user: administrator@vsphere.local
+    pass: VMware@123
+    dc: DC1
+    cluster: PROD
+    template: rocky-template
+    datastore: shared01
+    network: VM_Network
+    vm_name: app01
+    ip: 192.168.10.50
+
+    # VMware dynamic inventory classification
+    vm_role: web
+    vm_env: prod
+
+    # Domain join
+    domain_name: corp.lab.local
+    domain_user: joinuser@corp.lab.local
+    domain_pass: Password@123
+
+    # Disk layout
+    vm_disks:
+      - size_gb: 40
+        type: thin
+        datastore: shared01
+      - size_gb: 100
+        type: thin
+        datastore: shared01
+
+  tasks:
+    - name: Clone VM with disk layout, tags and network
+      vmware_guest:
+        hostname: "{{ vcenter }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: no
+        datacenter: "{{ dc }}"
+        cluster: "{{ cluster }}"
+        name: "{{ vm_name }}"
+        template: "{{ template }}"
+        datastore: "{{ datastore }}"
+        state: poweredon
+
+        # Auto classification (dynamic inventory)
+        tags:
+          - category: role
+            tag: "{{ vm_role }}"
+          - category: env
+            tag: "{{ vm_env }}"
+
+        networks:
+          - name: "{{ network }}"
+            ip: "{{ ip }}"
+            netmask: 255.255.255.0
+            gateway: 192.168.10.1
+
+        customization:
+          hostname: "{{ vm_name }}"
+
+        disk: "{{ vm_disks }}"
+
+    - name: Wait for SSH availability
+      wait_for:
+        host: "{{ ip }}"
+        port: 22
+        delay: 30
+        timeout: 600
+
+    - name: Join domain, deploy SSSD and sudo rules
+      delegate_to: "{{ ip }}"
+      become: yes
+      vars:
+        ansible_user: root
+        ansible_password: RootPass@123
+      block:
+
+        - name: Install domain packages
+          dnf:
+            name:
+              - realmd
+              - sssd
+              - oddjob
+              - oddjob-mkhomedir
+              - adcli
+              - samba-common-tools
+            state: present
+
+        - name: Join AD domain
+          command: >
+            realm join {{ domain_name }}
+            -U {{ domain_user }}
+            --install=/
+          args:
+            stdin: "{{ domain_pass }}"
+
+        - name: Deploy hardened SSSD config
+          copy:
+            src: files/sssd.conf
+            dest: /etc/sssd/sssd.conf
+            owner: root
+            group: root
+            mode: '0600'
+
+        - name: Restart SSSD
+          service:
+            name: sssd
+            state: restarted
+            enabled: yes
+
+        # AD Group Based Sudo
+        - name: Push sudo rules for AD groups
+          copy:
+            dest: /etc/sudoers.d/ad_groups
+            content: |
+              %linux-admins@{{ domain_name }} ALL=(ALL) NOPASSWD:ALL
+              %web-admins@{{ domain_name }} ALL=(ALL) NOPASSWD:ALL
+            owner: root
+            group: root
+            mode: '0440'
+

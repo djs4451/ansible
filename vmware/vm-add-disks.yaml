@@ -1,0 +1,35 @@
+- name: Add additional disks to an existing VM
+  hosts: localhost
+  gather_facts: no
+
+  collections:
+    - community.vmware
+
+  vars:
+    vcenter: vc.lab.local
+    user: administrator@vsphere.local
+    pass: VMware@123
+    dc: DC1
+    vm_name: app01
+
+    # New disks to be added
+    new_disks:
+      - size_gb: 200
+        type: thin
+        datastore: shared01
+      - size_gb: 50
+        type: thin
+        datastore: shared01
+
+  tasks:
+    - name: Add disks to VM
+      vmware_guest_disk:
+        hostname: "{{ vcenter }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: no
+        datacenter: "{{ dc }}"
+        name: "{{ vm_name }}"
+        disk: "{{ new_disks }}"
+        state: present
+

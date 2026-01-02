@@ -1,0 +1,37 @@
+- name: Migrate VM to a different Datacenter and Cluster
+  hosts: localhost
+  gather_facts: no
+
+  collections:
+    - community.vmware
+
+  vars:
+    vcenter: vc.lab.local
+    user: administrator@vsphere.local
+    pass: VMware@123
+    
+    vm_name: app01
+
+    # Destination Details
+    target_dc: "DC2"
+    target_cluster: "Production-Cluster-02"  # Added Cluster Info
+    target_host: "esxi-dc2-01.lab.local"
+    target_datastore: "datastore_dc2_ssd"
+    target_network: "VM Network DC2"
+
+  tasks:
+    - name: Relocate VM with full resource path
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: no
+        name: "{{ vm_name }}"
+        datacenter: "{{ target_dc }}"
+        cluster: "{{ target_cluster }}"      # Explicitly target the cluster
+        esxi_hostname: "{{ target_host }}"   # Optional if DRS is active, but good for pinning
+        datastore: "{{ target_datastore }}"
+        networks:
+          - name: "{{ target_network }}"
+        state: poweredon
+      delegate_to: localhost

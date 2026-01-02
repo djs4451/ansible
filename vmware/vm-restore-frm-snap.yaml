@@ -1,0 +1,38 @@
+- name: Restore VM from snapshot
+  hosts: localhost
+  gather_facts: no
+
+  collections:
+    - community.vmware
+
+  vars:
+    vcenter: vc.lab.local
+    user: administrator@vsphere.local
+    pass: VMware@123
+    dc: DC1
+    vm_name: app01
+
+    snapshot_name: before_patch
+
+  tasks:
+    - name: Revert VM to snapshot
+      vmware_guest_snapshot:
+        hostname: "{{ vcenter }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: no
+        datacenter: "{{ dc }}"
+        name: "{{ vm_name }}"
+        snapshot_name: "{{ snapshot_name }}"
+        state: revert
+
+    - name: Power on VM after revert
+      vmware_guest:
+        hostname: "{{ vcenter }}"
+        username: "{{ user }}"
+        password: "{{ pass }}"
+        validate_certs: no
+        datacenter: "{{ dc }}"
+        name: "{{ vm_name }}"
+        state: poweredon
+

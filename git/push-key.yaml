@@ -1,0 +1,32 @@
+---
+- name: Add SSH public key to GitHub account
+  hosts: node02-rocky-linux
+  gather_facts: false
+
+  vars:
+    github_token: "{{ lookup('file','/root/pat_token.txt') }}"
+    github_api_url: "https://api.github.com/user/keys"
+    public_key_path: "/root/.ssh/id_ed25519.pub"
+    key_title: "ansible-{{ inventory_hostname }}"
+
+  tasks:
+    - name: Read SSH public key
+      slurp:
+        src: "{{ public_key_path }}"
+      register: ssh_key
+
+    - name: Upload SSH key to GitHub
+      uri:
+        url: "{{ github_api_url }}"
+        method: POST
+        headers:
+          Authorization: "token {{ github_token }}"
+          Accept: "application/vnd.github+json"
+        body_format: json
+        body:
+          title: "{{ key_title }}"
+          key: "{{ ssh_key.content | b64decode }}"
+        status_code:
+          - 201    # Created
+          - 422    # Already exists
+

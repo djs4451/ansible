@@ -1,0 +1,26 @@
+plugin: community.vmware.vmware_vm_inventory
+
+hostname: vc.lab.local
+username: administrator@vsphere.local
+password: VMware@123
+validate_certs: false
+
+with_tags: true
+with_custom_attributes: true
+
+hostnames:
+  - config.name
+  - config.uuid
+
+keyed_groups:
+  - key: runtime.powerState
+    prefix: power
+  - key: guest.guestFamily
+    prefix: os
+  - key: tag
+    prefix: tag
+  - key: config.guestId
+    prefix: distro
+  - key: parent.name
+    prefix: cluster
+

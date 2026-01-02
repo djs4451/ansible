@@ -1,0 +1,6 @@
+shell: |
+  current=$(uname -r)
+  latest=$(rpm -q kernel --last | head -n 1 | awk '{print $1}'|sed 's/kernel-//')
+  [[ "$current" == "$latest" ]] && echo 0 || echo 1
+register: kernel_reboot
+

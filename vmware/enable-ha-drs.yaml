@@ -1,0 +1,17 @@
+- name: Configure Cluster HA/DRS
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Enable HA and DRS
+      vmware_cluster:
+        hostname: vc.lab.local
+        username: administrator@vsphere.local
+        password: VMware@123
+        validate_certs: no
+        datacenter_name: DC1
+        cluster_name: PROD
+        enable_ha: true
+        enable_drs: true
+        drs_default_vm_behavior: fullyAutomated
+

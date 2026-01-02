@@ -1,0 +1,92 @@
+---
+- name: Patch compliance audit and segregation
+  hosts: rhel_servers
+  become: yes
+  gather_facts: yes
+
+  tasks:
+
+    # needs-restarting must exist
+    - name: Ensure dnf-plugins-core is installed
+      package:
+        name: dnf-plugins-core
+        state: present
+
+    - name: Get last patch time
+      shell: dnf history info | awk '/Begin time/{print $4,$5,$6,$7}' | head -1
+      register: last_patch
+      changed_when: false
+
+    - name: Get running kernel
+      command: uname -r
+      register: running_kernel
+      changed_when: false
+
+    - name: Get latest installed kernel
+      shell: rpm -q kernel --last | head -1 | awk '{print $1}'
+      register: latest_kernel
+      changed_when: false
+
+    - name: Get uptime
+      command: uptime -p
+      register: uptime
+      changed_when: false
+
+    - name: Check reboot pending
+      command: needs-restarting -r
+      register: restart_check
+      failed_when: false
+      changed_when: false
+
+    - set_fact:
+        reboot_pending: "{{ restart_check.rc == 1 }}"
+
+    - name: Check pending packages
+      command: dnf check-update
+      register: pending_updates
+      failed_when: false
+      changed_when: false
+
+    # Compliance logic
+    - set_fact:
+        non_compliant: "{{ reboot_pending or (pending_updates.rc == 100) }}"
+
+    # Segregation
+    - name: Add failed hosts to group
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: FAILED_PATCH
+      when: non_compliant
+
+    - name: Add compliant hosts to group
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: COMPLIANT_PATCH
+      when: not non_compliant
+
+    # Host report
+    - name: Print host patch report
+      debug:
+        msg: |
+          Host: {{ inventory_hostname }}
+          Last Patch: {{ last_patch.stdout | default('Unknown') }}
+          Uptime: {{ uptime.stdout }}
+          Running Kernel: {{ running_kernel.stdout }}
+          Latest Kernel: {{ latest_kernel.stdout }}
+          Reboot Pending: {{ reboot_pending }}
+          Pending Pkgs: {{ pending_updates.stdout_lines | length }}
+
+
+- name: Final compliance summary
+  hosts: localhost
+  gather_facts: false
+  tasks:
+
+    - name: Show FAILED servers
+      debug:
+        msg: "{{ groups['FAILED_PATCH'] | default([]) }}"
+
+    - name: Show COMPLIANT servers
+      debug:
+        msg: "{{ groups['COMPLIANT_PATCH'] | default([]) }}"
+            
