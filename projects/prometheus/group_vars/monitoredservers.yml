@@ -1,0 +1,4 @@
+---
+node_exporter_version: "1.9.1"
+
+cadvisor_image: gcr.io/cadvisor/cadvisor:v0.49.1

@@ -1,0 +1,83 @@
+---
+#################################################################
+# Install Docker Prerequisites
+#################################################################
+
+- name: Install dnf plugins
+  package:
+    name: dnf-plugins-core
+    state: present
+
+#################################################################
+# Add Docker Repository
+#################################################################
+
+- name: Add Docker CE repository
+  get_url:
+    url: https://download.docker.com/linux/rhel/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+    mode: '0644'
+
+#################################################################
+# Install Docker
+#################################################################
+
+- name: Install Docker CE packages
+  package:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+
+#################################################################
+# Start Docker
+#################################################################
+
+- name: Enable and start Docker
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+
+#################################################################
+# Install Python Requirements
+#################################################################
+
+- name: Install pip
+  package:
+    name: python3-pip
+    state: present
+
+- name: Install Docker SDK for Python
+  pip:
+    name: docker
+
+#################################################################
+# Run cAdvisor Container
+#################################################################
+
+- name: Run cAdvisor container
+  docker_container:
+    name: cadvisor
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    state: started
+    restart_policy: unless-stopped
+    privileged: true
+
+    ports:
+      - "8080:8080"
+
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+
+    command:
+      - "--docker_only=false"
+      - "--housekeeping_interval=30s"
+      - "--max_housekeeping_interval=35s"

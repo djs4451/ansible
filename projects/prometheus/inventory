@@ -1,0 +1,6 @@
+[prometheus]
+promtheus ansible_host=192.168.74.160
+
+[monitoredservers]
+nginx ansible_host=192.168.74.161
+mysqldb ansible_host=192.168.74.162

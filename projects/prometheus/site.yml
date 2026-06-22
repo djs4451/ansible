@@ -1,0 +1,16 @@
+---
+- name: Monitoring Server(Prometheus)
+  hosts: prometheus
+  become: yes
+
+  roles:
+    - prometheus
+    - grafana
+
+- name: Monitored Hosts
+  hosts: monitoredservers
+  become: yes
+
+  roles:
+    - node_exporter
+    - cadvisor
