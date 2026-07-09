@@ -51,11 +51,28 @@
 ## [openSUSE]
 ## green.example.com
 ## blue.example.com
+[sslcert]
+node01-rocky-linux
+
+[sslcert:vars]
+ansible_user=root
+ansible_port=22
+
+[redhat]
+192.168.74.152
+
 [webserver]
 node01-rocky-linux
 node02-rocky-linux
 
 [webserver:vars]
+ansible_user=root
+ansible_port=22
+
+[rhel]
+192.168.74.152
+
+[rhel:vars]
 ansible_user=root
 ansible_port=22
 
@@ -79,8 +96,12 @@ ansible_port=22
 webserver
 ubuntu 
 kali
-
+rhel
 #[localhost]
 #localhost ansible_connection=local
+[prometheus]
+prometheus ansible_host=192.168.74.160
 
-
+[monitoredservers]
+nginx ansible_host=192.168.74.161
+mysqldb ansible_host=192.168.74.162

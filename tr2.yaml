@@ -18,6 +18,7 @@
     - name: display traceroute to 192.168.1.38
       ansible.builtin.command: traceroute 192.168.1.38
       register: command_output
+      delegate_to: localhost
 
     - name: display the output
       debug:

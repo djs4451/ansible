@@ -4,13 +4,19 @@
   become: yes
 
   roles:
-    - prometheus
-    - grafana
+    - role: prometheus
+      tags: prometheus
+
+    - role: grafana
+      tags: grafana
 
 - name: Monitored Hosts
   hosts: monitoredservers
   become: yes
 
   roles:
-    - node_exporter
-    - cadvisor
+    - role: node_exporter
+      tags: node_exporter
+   
+    - role: cadvisor
+      tags: cadvisor
